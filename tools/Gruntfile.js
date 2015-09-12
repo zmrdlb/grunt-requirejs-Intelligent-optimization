@@ -18,44 +18,133 @@ module.exports = function(grunt) {
 		* }
 		* 不需要此项，则为{}
 	    */
-		exclude: {'all':['jquery'],'page/main2':['api1']}
+	   /**
+	    *  如果shim配置项依赖项是cdn加载方式，那么build后会出错。具体原因可以参加requirejs官网“"shim"配置的优化器重要注意事项:”
+	    *  解决方案有以下几种（优先级从高到低排列）：
+	    * 	  1. 将shim配置项改成AMD写法，不需要shim配置
+	    *     2. 设置build时不将shim配置项打包
+	    *     3. shim配置项依赖项不采用cdn方式加载，并且build时默认打包
+	    */
+		exclude: {'page/home/main1':['jquery.cookie']} 
 	};
 	
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		requirejs: {}
+		requirejs: {},
+		concat: {
+		  //将zepto的组件和核心包合并到一起
+		  zepto: {
+		    files: {
+		      'buildzepto/zepto/zepto-1.1.6.min.js': [
+		        'buildzepto/zepto.js',
+		        'buildzepto/assets.js',
+		        'buildzepto/callbacks.js',
+		        'buildzepto/data.js',
+		        'buildzepto/deferred.js',
+		        'buildzepto/detect.js',
+		        'buildzepto/fx.js',
+		        'buildzepto/fx_methods.js',
+				'buildzepto/gesture.js',
+				'buildzepto/ios3.js',
+				'buildzepto/selector.js',
+				'buildzepto/stack.js',
+				'buildzepto/touch.js'
+		      ]
+		    }
+		  }
+		  //assest中的lithe.js、config.js、Zepto.js合并
+			/*config: {
+				files: {
+					'../assest/js/lithe.min.js': ['../assest/js/lithe.min.js', '../assest/js/config.js', "../assest/js/core/zepto/Zepto.js"]
+				}
+			}*/
+		},
+		//压缩
+		uglify: {
+			options: {
+				mangle: {
+					except: ['Zepto','$'] //设置压缩的时候不被压缩的变量名称
+				},
+				report: 'gzip'
+			},
+			apps: {
+				src: 'zepto/*.js',
+				dest: 'buildzepto/',
+				expand: true,
+				flatten: true,
+				ext: '.js'
+			}
+			/*config: {
+				files: {
+					"../assest/js/config.js": ['config.js'],
+					"../assest/js/lithe.min.js": ['lithe.js'],
+					"../assest/js/core/zepto/Zepto.js": ["../assest/js/core/zepto/Zepto.js"]
+				}
+			}*/
+		},
+		//css打包压缩
+		cssmin: {
+			minify: {
+				expand: true,
+				cwd: '../css/pages/',
+				src: ['*.css'],
+				dest: '../assest/css/pages/',
+				ext: '.css'
+			}
+		},
+		//images文件复制
+		copy: {
+			images: {
+				expand: true,
+				cwd: '../images/',
+				src: ['**'],
+				dest: '../assest/images/'
+			}
+		}
 	});
 	
 	//配置requirejs的任务
 	grunt.task.registerTask('addfiles','config',function(){
 		/**
-		* 根据当前文件夹名称foldername，文件完整相对路径filesrc，从变量requirejsconfig.exclude中获取当前文件的完整exclude配置项
+		* 根据文件完整相对路径filesrc，从变量requirejsconfig.exclude中获取当前文件的完整exclude配置项
 		*/
-		function getexclude(foldername,filesrc){
+		function getexclude(filesrc){
 			var excludeobj = requirejsconfig.exclude;
 			var result = [];
-			var keyarr = ['all',foldername,filesrc];
-			for(var i = 0, len = keyarr.length; i < len; i++){
-			   if(excludeobj[keyarr[i]]){
-				  result = result.concat(excludeobj[keyarr[i]]);
-			   }
+			if(excludeobj){
+				//获取检测键值数组
+				var keyarr = ['all'];
+				var patharr = filesrc.split('/');
+				var begin = patharr[0];
+				keyarr.push(begin);
+				for(var i = 1, len = patharr.length; i < len; i++){
+					begin += '/'+patharr[i];
+					keyarr.push(begin);
+				}
+				for(var i = 0, len = keyarr.length; i < len; i++){
+				   if(excludeobj[keyarr[i]]){
+					  result = result.concat(excludeobj[keyarr[i]]);
+				   }
+				}
 			}
 			return result;
+		}
+		/**
+		* 根据grunt解析出来的路径，获取需要进行优化的Js的完整路径
+		*/
+		function getfullpath(file){
+			return file.match(/.*js\/(.*).js/)[1];
 		}
 		//requirejs打包处理程序
 		for(var i = 0, len = requirejsconfig.mfolder.length; i < len; i++){
 			var folder = requirejsconfig.mfolder[i];
-			var files = grunt.file.expand('../web/js/'+folder+'/*.js');
+			var files = grunt.file.expand('../web/js/'+folder+'/**/*.js');
 			files.forEach(function(file) {
-				var filenamelist = file.split('/');
-				var num = filenamelist.length;
-				var foldername = filenamelist[num-2];
-				var filename = filenamelist[num - 1].replace('.js','');
-				var filesrc = foldername + '/' + filename; //获取文件完整相对路径
+				var filesrc = getfullpath(file); //获取文件完整相对路径
 				var opt = {
 					name: filesrc
 				};
-				var exclude = getexclude(foldername,filesrc);
+				var exclude = getexclude(filesrc);
 				if(exclude.length > 0){
 					opt.exclude = exclude;
 				}
@@ -82,7 +171,11 @@ module.exports = function(grunt) {
 					paths: {
 						'api1': 'third/api1',
 						'api2': 'third/api2',
+						'jquery.cookie': 'third/jquery.cookie',
 						'jquery': 'http://www.zmr.com/lib/js/core/jquery/jquery-1.11.3.min'
+					},
+					shim: {
+						'jquery.cookie': ['jquery']
 					},
 					//需要打包（优化）的文件 exclude不打包此文件，但是得每个module项都得有配置
 					modules: requirejsconfig.modules
@@ -90,6 +183,13 @@ module.exports = function(grunt) {
 		  	}
 		});
 	});
+	
+	/*grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-contrib-concat');
+	grunt.loadNpmTasks('grunt-lithe');
+	grunt.loadNpmTasks('grunt-contrib-cssmin');
+	grunt.loadNpmTasks('grunt-contrib-copy');
+	grunt.registerTask('default', ['lithe', 'concat:zepto', 'uglify', 'concat:config', 'cssmin', 'copy']);*/
 	grunt.loadNpmTasks('grunt-contrib-requirejs');
 	grunt.registerTask('default', 'default', function(){
 		grunt.task.run(['addfiles','requirejs']);

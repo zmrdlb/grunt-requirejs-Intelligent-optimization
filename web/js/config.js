@@ -13,7 +13,11 @@
 		paths: {
 			'api1': 'third/api1',
 			'api2': 'third/api2',
+			'jquery.cookie': 'third/jquery.cookie',
 			'jquery': 'http://www.zmr.com/lib/js/core/jquery/jquery-1.11.3.min'
+		},
+		shim: {
+			'jquery.cookie': ['jquery']
 		}
 	};
 	requirejs.config(mod);
