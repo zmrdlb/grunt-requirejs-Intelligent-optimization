@@ -30,7 +30,7 @@ module.exports = function(grunt) {
 		* 不需要此项，则为{}
 		* 
 		* 注意：如果指定了exclude，如'page/home/main1': ['api1']，那么page/home/main1.js将会打包所有的依赖，但不包括api1及api1的依赖。
-		  所以api1也应该配置加入mfolder:['third/api1']。但是如果api1和main1有相同的依赖，那么main1则不包括与api1中共同的依赖
+		  所以在配置exclude之前，应该先指定优化api1。及api1写在前面。则可以mfolder:['third/api1','page/home/main1']
 	    *
 	    *  如果shim配置项依赖项是cdn加载方式，那么build后会出错。具体原因可以参加requirejs官网“"shim"配置的优化器重要注意事项:”
 	    *  解决方案有以下几种（优先级从高到低排列）：
