@@ -25,12 +25,12 @@ module.exports = function(grunt) {
 		* {
 			'all': ['api1'] 所有的modules不打包模块依赖api1
 			'page': ['api1'] page文件夹下的所有文件都不打包模块依赖api1		
-		*	'page/main1': ['api1'] page/main1.js不打包模块依赖api1
+		*	'page/home/main1': ['api1'] page/main1.js不打包模块依赖api1
 		* }
 		* 不需要此项，则为{}
 		* 
-		* 注意：exclude指定的不打包的文件将会只打包直接依赖，不会打包直接依赖的依赖。
-		* 如api1依赖common/a，会打包common/a，但是common/a依赖的common/b不会被打包进来
+		* 注意：如果指定了exclude，如'page/home/main1': ['api1']，那么page/home/main1.js将会打包所有的依赖，但不包括api1及api1的依赖。
+		  所以在配置exclude之前，应该先指定优化api1。及api1写在前面。则可以mfolder:['third/api1','page/home/main1']
 	    *
 	    *  如果shim配置项依赖项是cdn加载方式，那么build后会出错。具体原因可以参加requirejs官网“"shim"配置的优化器重要注意事项:”
 	    *  解决方案有以下几种（优先级从高到低排列）：
@@ -74,7 +74,6 @@ module.exports = function(grunt) {
 				}
 			}
 			pathskeys = pathskeys.join('|');
-			console.log('关键字'+pathskeys);
 		}
 		
 		/**
@@ -86,7 +85,6 @@ module.exports = function(grunt) {
 			if(requirejsconfig.paths && pathskeys != ''){
 				var reg = new RegExp(pathskeys);
 				if(reg.test(patharr[0])){ //匹配首个关键字，则继续查找是否有别名
-					console.log('首个关键字匹配'+filesrc);
 					var change = false;
 					for(var name in requirejsconfig.paths){
 						var _fulpath = requirejsconfig.paths[name];
@@ -129,7 +127,7 @@ module.exports = function(grunt) {
 		//requirejs打包处理程序
 		for(var i = 0, len = requirejsconfig.mfolder.length; i < len; i++){
 			var folder = requirejsconfig.mfolder[i];
-			var files = grunt.file.expand('../web/js/'+folder+'/**/*.js');
+			var files = grunt.file.expand('../web/js/'+folder+'{/**/*,}.js');
 			files.forEach(function(file) {
 				var filesrc = getfilepath(file); //获取文件相对路径
 				var opt = {
@@ -142,7 +140,6 @@ module.exports = function(grunt) {
 				requirejsconfig.modules.push(opt);
 			});
 		}
-		console.log(requirejsconfig.modules);
 		grunt.config.set('requirejs',{
 			compile: { //requirejs官方标准配置
 				options: {
