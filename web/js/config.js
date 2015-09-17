@@ -16,6 +16,11 @@
 			'jquery.cookie': 'third/jquery.cookie',
 			'jquery': 'http://www.zmr.com/lib/js/core/jquery/jquery-1.11.3.min'
 		},
+		map: {
+		  '*': {
+		    'css': 'require-css/css' // or whatever the path to require-css is
+		  }
+		},
 		shim: {
 			'jquery.cookie': ['jquery']
 		}

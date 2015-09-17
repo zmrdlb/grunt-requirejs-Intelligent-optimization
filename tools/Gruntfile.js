@@ -10,14 +10,14 @@ module.exports = function(grunt) {
 	 * 2. 如果在paths中给路径设置了别名，exclude里的key(除了all)和value都写成别名，没有则写成正常的相对路径（类似于mfolder）
 	 */
 	var requirejsconfig = {
-		mfolder: ['page','page2'], //待打包的文件夹，默认此文件夹下的所有Js都打包。文件夹基于appDir和baseUrl下
+		mfolder: ['page'], //待打包的文件夹，默认此文件夹下的所有Js都打包。文件夹基于appDir和baseUrl下
 		modules: [{name:'config'}], //modules项初始化
 		paths: { //requirejs.config里面的paths。没有则为{}
 			'api1': 'third/api1',
 			'api2': 'third/api2',
 			'jquery.cookie': 'third/jquery.cookie',
 			'jquery': 'http://www.zmr.com/lib/js/core/jquery/jquery-1.11.3.min'
-		},
+	    },
 		/**
 		* 给每个待打包的文件，指定不需要打包的文件.
 		* @param {name: ['file']} 打包name文件或文件夹下的所有文件，排除对指定file列表的文件的打包
@@ -25,11 +25,11 @@ module.exports = function(grunt) {
 		* {
 			'all': ['api1'] 所有的modules不打包模块依赖api1
 			'page': ['api1'] page文件夹下的所有文件都不打包模块依赖api1		
-		*	'page/home/main1': ['api1'] page/main1.js不打包模块依赖api1
+		*	'page/main1': ['api1'] page/main1.js不打包模块依赖api1
 		* }
 		* 不需要此项，则为{}
 		* 
-		* 注意：如果指定了exclude，如'page/home/main1': ['api1']，那么page/home/main1.js将会打包所有的依赖，但不包括api1及api1的依赖。
+		注意：如果指定了exclude，如'page/home/main1': ['api1']，那么page/home/main1.js将会打包所有的依赖，但不包括api1及api1的依赖。
 		  所以api1也应该配置加入mfolder:['third/api1']。但是如果api1和main1有相同的依赖，那么main1则不包括与api1中共同的依赖
 	    *
 	    *  如果shim配置项依赖项是cdn加载方式，那么build后会出错。具体原因可以参加requirejs官网“"shim"配置的优化器重要注意事项:”
@@ -43,7 +43,7 @@ module.exports = function(grunt) {
 	
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		requirejs: {}		
+		requirejs: {}
 	});
 	
 	//配置requirejs的任务
@@ -128,7 +128,7 @@ module.exports = function(grunt) {
 		//对于mfolder中的处理
 		for(var i = 0, len = requirejsconfig.mfolder.length; i < len; i++){
 			var folder = requirejsconfig.mfolder[i];
-			var files = grunt.file.expand('../js/'+folder+'/**/*.js');
+			var files = grunt.file.expand('../web/js/'+folder+'{/**/*,*}.js');
 			files.forEach(function(file) {
 				var filesrc = getfilepath(file); //获取文件相对路径
 				var opt = {
@@ -148,7 +148,6 @@ module.exports = function(grunt) {
 				}
 			}
 		}
-
 		grunt.config.set('requirejs',{
 			compile: { //requirejs官方标准配置
 				options: {
@@ -167,6 +166,11 @@ module.exports = function(grunt) {
 					//stubModules: ['api1'], //这个配置项有问题，api1压缩后正常，但是在打包后的main1.js里内容被清空define("api1",{})
 					//配置文件中相关路径的配置项
 					paths: requirejsconfig.paths,
+					map: {
+					  '*': {
+					    'css': 'require-css/css' // 添加require-css打包配置
+					  }
+					},
 					shim: {
 						'jquery.cookie': ['jquery']
 					},
