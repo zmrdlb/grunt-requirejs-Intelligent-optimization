@@ -10,8 +10,15 @@ module.exports = function(grunt) {
 	 * 2. 如果在paths中给路径设置了别名，exclude里的key(除了all)和value都写成别名，没有则写成正常的相对路径（类似于mfolder）
 	 */
 	var requirejsconfig = {
+		
+		//必填项
+		appDir: "../web/js", //将appDir下的代码全部压缩复制到dir参数指定的目录中，路径指向同requirejs.config的baseUrl相同的路径
+		dir: "../build/js", //目标文件夹
+		lastDir: 'js', //appDir指向路径的最后一个文件夹名称
 		mfolder: ['page'], //待打包的文件夹，默认此文件夹下的所有Js都打包。文件夹基于appDir和baseUrl下
 		modules: [{name:'config'}], //modules项初始化
+		
+		//选填项
 		paths: { //requirejs.config里面的paths。没有则为{}
 			'api1': 'third/api1',
 			'api2': 'third/api2',
@@ -38,7 +45,15 @@ module.exports = function(grunt) {
 	    *     2. 设置build时不将shim配置项打包
 	    *     3. shim配置项依赖项不采用cdn方式加载，并且build时默认打包
 	    */
-		exclude: {'page/home/main1':['jquery.cookie']} 
+		exclude: {'page/home/main1':['jquery.cookie']},
+		map: {
+		'*': {
+		    'css': 'require-css/css' // 添加require-css打包配置
+		  }
+		},
+		shim: {
+			'jquery.cookie': ['jquery']
+		}
 	};
 	
 	grunt.initConfig({
@@ -80,7 +95,7 @@ module.exports = function(grunt) {
 		 * 根据grunt file读取的完整路径返回处理后的filepath(处理包括只获取相对于baseUrl中的路径，和对于paths设置中有别名的返回别名)
 		 */
 		function getfilepath(filesrc){
-			var filepath = filesrc.match(/.*js\/(.*).js/)[1];
+			var filepath = filesrc.match(getfilepath.reg)[1];
 			var patharr = filepath.split('/');
 			if(requirejsconfig.paths && pathskeys != ''){
 				var reg = new RegExp(pathskeys);
@@ -98,6 +113,7 @@ module.exports = function(grunt) {
 			}
 			return filepath;
 		}
+		getfilepath.reg = new RegExp('.*'+requirejsconfig.lastDir+'\/(.*).js');
 		
 		/**
 		* 根据文件完整相对路径filesrc，从变量requirejsconfig.exclude中获取当前文件的完整exclude配置项
@@ -128,7 +144,7 @@ module.exports = function(grunt) {
 		//对于mfolder中的处理
 		for(var i = 0, len = requirejsconfig.mfolder.length; i < len; i++){
 			var folder = requirejsconfig.mfolder[i];
-			var files = grunt.file.expand('../web/js/'+folder+'{/**/*,*}.js');
+			var files = grunt.file.expand(requirejsconfig.appDir+'/'+folder+'{/**/*,*}.js');
 			files.forEach(function(file) {
 				var filesrc = getfilepath(file); //获取文件相对路径
 				var opt = {
@@ -151,35 +167,30 @@ module.exports = function(grunt) {
 		grunt.config.set('requirejs',{
 			compile: { //requirejs官方标准配置
 				options: {
-				    appDir: "../web/js", //将js下的代码全部压缩复制到dir参数指定的目录中
-					baseUrl: ".", //相对于appDir的baseUrl设置
-					dir: "../build/js", //目标文件夹
+				    appDir: requirejsconfig.appDir, //将appDir下的代码全部压缩复制到dir参数指定的目录中
+					baseUrl: '.',
+					dir: requirejsconfig.dir, //目标文件夹
 					keepBuildDir: false, //设置为false,则会先清空dir里面的文件
 					//skipDirOptimize: true, 默认为false。为true则除了modules里声明的文件，其他文件未进行优化和压缩，也就是说和执行requirejs优化前是一样的
-					/*打包的时候不包括指定表达式里的文件或文件夹，这样也不会输出到dir。如果modules里面的文件依赖于此声明的文件，则不要使用此配置，否则会报错。原因如下：
+					/*用正则表达式声明指定不复制到dir指定文件夹的文件。如果modules里面的文件依赖于此声明的文件，则不要使用此配置，否则会报错。原因如下：
 					  requirejs打包原理：
 					  1. 所有代码复制到dir；
 					  2. 压缩所有代码；
 					  3. 按照引用对modules里声明的文件进行打包；
 					*/
-					//fileExclusionRegExp: /common|comp/, 
+					//fileExclusionRegExp: /^core|manager|demo|template/, 
 					//stubModules: ['api1'], //这个配置项有问题，api1压缩后正常，但是在打包后的main1.js里内容被清空define("api1",{})
 					//配置文件中相关路径的配置项
-					paths: requirejsconfig.paths,
-					map: {
-					  '*': {
-					    'css': 'require-css/css' // 添加require-css打包配置
-					  }
-					},
-					shim: {
-						'jquery.cookie': ['jquery']
-					},
+					paths: requirejsconfig.paths || {},
+					map: requirejsconfig.map || {},
+					shim: requirejsconfig.shim || {},
 					//需要打包（优化）的文件 exclude不打包此文件，但是得每个module项都得有配置
 					modules: requirejsconfig.modules
 				}
 		  	}
 		});
 	});
+	
 	grunt.loadNpmTasks('grunt-contrib-requirejs');
 	grunt.registerTask('default', 'default', function(){
 		grunt.task.run(['addfiles','requirejs']);
