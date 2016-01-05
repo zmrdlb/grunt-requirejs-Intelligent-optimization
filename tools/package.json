@@ -1,11 +1,25 @@
 {
   "name": "requirejs-demo",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "description": "grunt-requirejs-Intelligent-optimization",
+  "main": "grunt-zmr-requirejs",
+  "dependencies": {
+    "grunt": "^0.4.5"
+  },
   "devDependencies": {
-    "grunt": "~0.4.5",
-    "grunt-contrib-copy": "~0.8.0",
-    "grunt-contrib-cssmin": "~0.12.2",
-    "grunt-contrib-requirejs": "~0.4.0",
-    "grunt-contrib-uglify": "^0.9.1"
-  }
+    "grunt-contrib-copy": "^0.8.2",
+    "grunt-contrib-cssmin": "^0.14.0",
+    "grunt-contrib-requirejs": "^0.4.4",
+    "grunt-contrib-uglify": "^0.11.0"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zmrdlb/grunt-requirejs-Intelligent-optimization.git"
+  },
+  "keywords": [
+    "grunt-zmr-requirejs"
+  ],
+  "author": "zmr",
+  "license": "BSD-3-Clause"
 }
