@@ -64,7 +64,46 @@ module.exports = function(grunt) {
 	
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		requirejs: {}
+		requirejs: {},
+		//把web/html里面的页面里面js和css加上版本号
+        replace: {
+            dist: {
+                options: {
+                    patterns: [
+                        {
+                            match: 'version',
+                            replacement: version
+                        },
+                        {
+                            match: /\/web\//g,
+                            replacement: '/build/'
+                        }
+                    ]
+                },
+                // files: [
+                   // {expand: true, flatten: true, src: ['src/index.html'], dest: 'build/'}
+                // ]
+                expand: true,
+                flatten: true,
+                cwd: '../web/html/',
+                src: ['**/*.html'],
+                dest: '../build/html/'
+                
+           }
+        },
+        //build里的html压缩
+        htmlmin: {                                    
+            dist: {                                    
+                options: {                                
+                    removeComments: true,
+                    collapseWhitespace: true
+                },
+                expand: true,
+                cwd: '../build/html/',
+                src: ['**/*.html'],
+                dest: '../build/html/'
+            }
+       }
 	});
 	
 	//配置requirejs的任务
@@ -202,7 +241,9 @@ module.exports = function(grunt) {
     });
     
 	grunt.loadNpmTasks('grunt-contrib-requirejs');
+	grunt.loadNpmTasks('grunt-replace');
+    grunt.loadNpmTasks('grunt-contrib-htmlmin');
 	grunt.registerTask('default', 'default', function(){
-		grunt.task.run(['addfiles','requirejs']);
+		grunt.task.run(['addfiles','requirejs','replace','htmlmin']);
 	});
 };
